@@ -1,0 +1,319 @@
+# Dataset Registry for realestatebr package
+# This file contains metadata for all available datasets
+
+datasets:
+  abecip:
+    name: "ABECIP Housing Credit Indicators"
+    name_pt: "Indicadores de Crédito Habitacional ABECIP"
+    description: "Housing credit data from Brazilian housing finance system (SFH) including SBPE flows, financed units, and home equity loans"
+    source: "ABECIP - Associação Brasileira das Entidades de Crédito Imobiliário"
+    url: "https://www.abecip.org.br"
+    geography: "Brazil"
+    frequency: "monthly"
+    coverage: "1982-present (varies by category)"
+    update_schedule: "weekly"
+    warn_after_days: 14
+    categories:
+      sbpe:
+        name: "SBPE Monetary Flows"
+        description: "Monetary flows from SBPE (Sistema Brasileiro de Poupança e Empréstimo)"
+        coverage: "January 1982-present"
+      units:
+        name: "Financed Units"
+        description: "Number of units financed by SBPE, split by construction and acquisition"
+        coverage: "January 2002-present"
+      cgi:
+        name: "Home Equity Loans (CGI)"
+        description: "Summary data on home equity loans including default rates and average terms"
+        coverage: "January 2017-present"
+    internal_function: "fetch_abecip"
+    dataset_function: "get_abecip_indicators"
+    data_type: "list"
+    cached_file:
+      sbpe: "abecip_sbpe.rds"
+      units: "abecip_units.rds"
+      cgi: "abecip_cgi.rds"
+    translation_notes: "Column names translated from Portuguese to English following standard patterns"
+
+  abrainc:
+    name: "ABRAINC-FIPE Primary Market Indicators"
+    name_pt: "Indicadores ABRAINC-FIPE do Mercado Primário"
+    description: "Primary real estate market indicators including launches, sales, and business conditions from 66+ partnered developers"
+    source: "ABRAINC/FIPE"
+    url: "https://www.fipe.org.br/pt-br/indices/abrainc"
+    geography: "Brazil (major cities)"
+    frequency: "quarterly"
+    coverage: "2014-present"
+    update_schedule: "weekly"
+    warn_after_days: 14
+    categories:
+      indicator:
+        name: "Market Indicators"
+        description: "Broad numbers of launches, sales, supply in the primary market"
+      radar:
+        name: "Business Radar"
+        description: "0-10 standardized index for general business conditions"
+      leading:
+        name: "Leading Indicator"
+        description: "Building permits in São Paulo as real estate leading indicator"
+    internal_function: "fetch_abrainc"
+    dataset_function: "get_abrainc_indicators"
+    data_type: "list"
+    cached_file:
+      indicator: "abrainc_indicator.rds"
+      radar: "abrainc_radar.rds"
+      leading: "abrainc_leading.rds"
+    translation_notes: "Social Housing (MCMV) refers to Minha Casa Minha Vida and Casa Verde Amarela programs"
+
+  bcb_realestate:
+    name: "BCB Real Estate Market Data"
+    name_pt: "Dados do Mercado Imobiliário BCB"
+    description: "Comprehensive real estate credit and market data from Brazilian Central Bank"
+    source: "Banco Central do Brasil"
+    url: "https://dadosabertos.bcb.gov.br/dataset/informacoes-do-mercado-imobiliario"
+    geography: "Brazil (by state)"
+    frequency: "monthly"
+    coverage: "2001-present (varies by category)"
+    update_schedule: "weekly"
+    warn_after_days: 14
+    categories:
+      accounting:
+        name: "Credit Accounting"
+        description: "Credit accounting and balance sheet data"
+      application:
+        name: "Credit Applications"
+        description: "Credit application statistics and approvals"
+      indices:
+        name: "Real Estate Indices"
+        description: "Various real estate market indices"
+      sources:
+        name: "Credit Sources"
+        description: "Breakdown of credit sources and funding"
+      units:
+        name: "Financed Units"
+        description: "Number and value of financed units"
+    internal_function: "fetch_bcb_realestate"
+    dataset_function: "get_bcb_realestate"
+    data_type: "tibble"
+    cached_file: "bcb_realestate.rds"
+    default_table: "all"
+    translation_notes: "Complex multi-level series structure; v1-v5 columns contain series components"
+    
+  secovi:
+    name: "SECOVI-SP Real Estate Market Data"
+    name_pt: "Dados do Mercado Imobiliário SECOVI-SP"
+    description: "São Paulo real estate market indicators including condominium fees, rentals, launches, and sales"
+    source: "SECOVI-SP - Sindicato da Habitação"
+    url: "https://www.secovi.com.br"
+    geography: "São Paulo"
+    frequency: "monthly"
+    coverage: "2004-present (varies by category)"
+    update_schedule: "weekly"
+    warn_after_days: 14
+    categories:
+      condo:
+        name: "Condominium Fees"
+        description: "Average condominium fees by region and property type"
+      rent:
+        name: "Rental Market"
+        description: "Rental prices and market dynamics"
+      launch:
+        name: "New Launches"
+        description: "New real estate project launches"
+      sale:
+        name: "Sales Market"
+        description: "Sales prices and transaction volumes"
+    internal_function: "fetch_secovi"
+    dataset_function: "get_secovi"
+    data_type: "tibble"
+    cached_file: "secovi_sp.rds"
+    default_table: "all"
+    translation_notes: "Regional classifications specific to São Paulo metropolitan area"
+    
+  rppi_bis:
+    name: "BIS Residential Property Price Indices"
+    name_pt: "Índices de Preços Residenciais BIS"
+    description: "International residential property price indices from Bank for International Settlements"
+    source: "Bank for International Settlements"
+    url: "https://data.bis.org/topics/RPP"
+    geography: "International (60+ countries including Brazil)"
+    frequency: "quarterly"
+    coverage: "1970-present (varies by country)"
+    update_schedule: "monthly"
+    warn_after_days: 60
+    categories:
+      selected:
+        name: "Selected Series"
+        description: "Core RPPI series for major countries"
+        url: "https://www.bis.org/statistics/pp_selected.htm"
+      detailed_monthly:
+        name: "Detailed Monthly"
+        description: "Monthly detailed RPPI data"
+        url: "https://data.bis.org/topics/RPP"
+      detailed_quarterly:
+        name: "Detailed Quarterly"
+        description: "Quarterly detailed RPPI data"
+        url: "https://data.bis.org/topics/RPP"
+      detailed_annual:
+        name: "Detailed Annual"
+        description: "Annual detailed RPPI data"
+        url: "https://data.bis.org/topics/RPP"
+      detailed_halfyearly:
+        name: "Detailed Half-yearly"
+        description: "Half-yearly detailed RPPI data"
+        url: "https://data.bis.org/topics/RPP"
+    internal_function: "fetch_bis"
+    dataset_function: "get_rppi_bis"
+    data_type: "tibble"
+    cached_file:
+      selected: "bis_selected.rds"
+      detailed_monthly: "rppi_bis_detailed_monthly.rds"
+      detailed_quarterly: "rppi_bis_detailed_quarterly.rds"
+      detailed_annual: "rppi_bis_detailed_annual.rds"
+      detailed_halfyearly: "rppi_bis_detailed_halfyearly.rds"
+    translation_notes: "International data; minimal translation needed"
+
+  rppi:
+    name: "Brazilian Residential Property Price Indices"
+    name_pt: "Índices de Preços Residenciais Brasileiros"
+    description: "Comprehensive collection of all Brazilian residential property price indices"
+    source: "Multiple (FIPE/ZAP, IVGR, IGMI, IQA, IQAIW, IVAR, SECOVI-SP)"
+    url: "varies by index"
+    geography: "Brazil"
+    frequency: "monthly"
+    coverage: "varies by index"
+    update_schedule: "weekly"
+    warn_after_days: 14
+    categories:
+      # Individual indices
+      fipezap:
+        name: "FIPE-ZAP Index"
+        description: "FIPE-ZAP residential property price index"
+        type: "sales"
+        coverage: "Major cities"
+        source: "FIPE/ZAP Imóveis"
+      ivgr:
+        name: "IVGR - Índice de Valores Gerais Residenciais"
+        description: "General residential values index"
+        type: "sales"
+        coverage: "National"
+        source: "IVGR"
+      igmi:
+        name: "IGMI - Índice Geral do Mercado Imobiliário"
+        description: "General real estate market index"
+        type: "sales"
+        coverage: "São Paulo"
+        source: "IGMI"
+      iqa:
+        name: "IQA - Índice QuintoAndar"
+        description: "QuintoAndar rent price index"
+        type: "rent"
+        coverage: "Major cities"
+        source: "QuintoAndar"
+      iqaiw:
+        name: "IQAIW - Índice QuintoAndar ImovelWeb"
+        description: "QuintoAndar ImovelWeb hedonic rent price index"
+        type: "rent"
+        coverage: "Major cities (6 cities)"
+        source: "QuintoAndar"
+      ivar:
+        name: "IVAR - Índice de Valores de Aluguéis Residenciais"
+        description: "Residential rent values index"
+        type: "rent"
+        coverage: "National"
+        source: "IVAR"
+      secovi_sp:
+        name: "SECOVI-SP Index"
+        description: "São Paulo real estate syndicate index"
+        type: "both"
+        coverage: "São Paulo"
+        source: "SECOVI-SP"
+      # Aggregation categories (stacked data)
+      sale:
+        name: "Stacked Sale Indices"
+        description: "Harmonized combination of all sale-related indices with source column"
+        includes: ["igmi", "ivgr", "fipezap_sale_only"]
+        data_structure: "Standardized columns with source identification"
+        note: "FipeZap filtered to residential/total/sale for consistent stacking"
+      rent:
+        name: "Stacked Rent Indices"
+        description: "Harmonized combination of all rent-related indices with source column"
+        includes: ["ivar", "iqaiw", "fipezap_rent_only"]
+        data_structure: "Standardized columns with source identification"
+        note: "FipeZap filtered to residential/total/rent for consistent stacking"
+      all:
+        name: "All Indices Combined"
+        description: "Complete stacked dataset with transaction_type indicator"
+        includes: ["all sale indices", "all rent indices"]
+        data_structure: "Includes both source and transaction_type columns"
+    internal_function: "fetch_rppi"
+    dataset_function: "get_rppi"
+    data_type: "mixed"
+    cached_file:
+      sale: "rppi_sale.rds"
+      rent: "rppi_rent.rds"
+      fipezap: "rppi_fipe.csv.gz"
+      ivgr: "rppi_ivgr.csv.gz"
+      igmi: "rppi_igmi.csv.gz"
+      iqa: "rppi_iqa.csv.gz"
+      iqaiw: "rppi_iqaiw.csv.gz"
+      ivar: "rppi_ivar.csv.gz"
+      secovi_sp: "rppi_secovi_sp.csv.gz"
+    translation_notes: "Index methodologies vary by source; base periods normalized where possible"
+
+  bcb_series:
+    name: "BCB Economic Series"
+    name_pt: "Séries Econômicas BCB"
+    description: "General economic and real estate related time series from Brazilian Central Bank"
+    source: "Banco Central do Brasil - SGS"
+    url: "https://www3.bcb.gov.br/sgspub"
+    geography: "Brazil"
+    frequency: "varies (daily/monthly/quarterly)"
+    coverage: "varies by series"
+    update_schedule: "weekly"
+    warn_after_days: 14
+    categories:
+      core:
+        name: "Core Real Estate Series"
+        description: "Core real estate credit series (concession, rates, delinquency)"
+      primary:
+        name: "Primary Series"
+        description: "Core series plus secondary real estate and key macro series (SELIC, IPCA, INCC)"
+      secondary:
+        name: "Secondary Series"
+        description: "Primary series plus broader macroeconomic context (GDP, unemployment, income)"
+      tertiary:
+        name: "Tertiary Series"
+        description: "All series including less relevant macro and discontinued series"
+      full:
+        name: "Full Series"
+        description: "All available series (equivalent to tertiary)"
+    internal_function: "fetch_bcb_series"
+    dataset_function: "get_bcb_series"
+    data_type: "tibble"
+    cached_file: "bcb_series.rds"
+    default_table: "core"
+    metadata_table: "bcb_metadata"
+    translation_notes: "Metadata available in both Portuguese and English"
+
+
+  fgv_ibre:
+    name: "FGV IBRE Real Estate Indicators"
+    name_pt: "Indicadores Imobiliários FGV IBRE"
+    description: "Real estate market indicators from Fundação Getulio Vargas IBRE"
+    source: "FGV IBRE"
+    url: "https://portalibre.fgv.br"
+    geography: "Brazil"
+    frequency: "monthly"
+    coverage: "2010-present"
+    internal_function: "fetch_fgv"
+    dataset_function: "get_fgv_ibre"
+    data_type: "tibble"
+    cached_file: "fgv_ibre.rds"
+    translation_notes: "Technical economic terms; standard translations applied"
+    manual_update: true
+    update_notes: "No public API available; requires manual download and processing"
+    update_schedule: "weekly"
+    warn_after_days: 14
+
+

@@ -1,0 +1,40 @@
+Package: realestatebr
+Type: Package
+Title: Import Brazilian Real Estate Data into R
+Version: 1.0.0
+Authors@R: person(
+    given = "Vinicius Oike",
+    family = "Reginatto",
+    email = "viniciusoike@gmail.com",
+    role = c("aut", "cre", "cph")
+    )
+Description: Provides access to Brazilian real estate market data from multiple
+    official sources: the Central Bank of Brazil (BCB)
+    <https://www.bcb.gov.br/>, the Brazilian Association of Real Estate
+    Developers (ABRAINC) <https://abrainc.org.br/>, the Brazilian Association
+    of Real Estate Credit and Savings Entities (ABECIP)
+    <https://www.abecip.org.br/>, the Getulio Vargas Foundation (FGV)
+    <https://portalibre.fgv.br/>, and the Bank for International Settlements
+    (BIS) <https://www.bis.org/>.
+License: MIT + file LICENSE
+URL: https://github.com/viniciusoike/realestatebr,
+        https://viniciusoike.github.io/realestatebr/
+BugReports: https://github.com/viniciusoike/realestatebr/issues
+Encoding: UTF-8
+Language: en-US
+LazyData: true
+Depends: R (>= 4.1.0)
+RoxygenNote: 7.3.3
+Imports: cli, dplyr, httr, janitor, lubridate, purrr, rappdirs, rbcb,
+        readr, readxl, rlang, rvest, stringr, tibble, tidyr, tidyxl,
+        xml2, yaml, zoo
+Suggests: geobr, ggplot2, kableExtra, knitr, piggyback, pkgdown,
+        RcppRoll, rmarkdown, scales, sf, stringi, targets, tarchetypes,
+        testthat, trendseries
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2026-05-20 13:59:01 UTC; viniciusreginatto
+Author: Vinicius Oike Reginatto [aut, cre, cph]
+Maintainer: Vinicius Oike Reginatto <viniciusoike@gmail.com>
+Repository: CRAN
+Date/Publication: 2026-05-27 19:50:02 UTC
