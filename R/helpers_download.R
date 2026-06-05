@@ -278,27 +278,24 @@ download_zip <- function(
 
 # GitHub cache fallback -------------------------------------------------------
 
-#' Fallback to GitHub Cache on Download Failure
+#' Fallback to GitHub Release on Download Failure
 #'
-#' Attempts to load a dataset from the GitHub release cache when a primary
-#' web download has failed. Returns NULL on miss so callers can decide
-#' whether to abort or degrade gracefully.
+#' Attempts to load a dataset from the package's GitHub release when a primary
+#' web download has failed. Returns NULL on miss so callers can decide whether
+#' to abort or degrade gracefully.
 #'
-#' @param dataset_name Character. Cache key used in GitHub releases (e.g.,
-#'   "bcb_realestate", "secovi_sp").
+#' @param dataset_name Character. Asset stem used in the GitHub release (e.g.,
+#'   `"bcb_realestate"`, `"secovi_sp"`).
 #' @param quiet Logical. If TRUE, suppresses messages.
 #'
-#' @return A tibble if the GitHub cache is available, otherwise NULL.
+#' @return A tibble if the GitHub release asset is available, otherwise NULL.
 #' @keywords internal
 fallback_to_github_cache <- function(dataset_name, quiet = FALSE) {
   if (!quiet) {
-    cli::cli_inform(c("i" = "Trying GitHub cache for {.val {dataset_name}}..."))
+    cli::cli_inform(c("i" = "Trying GitHub release for {.val {dataset_name}}..."))
   }
 
-  data <- rlang::try_fetch(
-    download_from_github_release(dataset_name, quiet = quiet),
-    error = function(cnd) NULL
-  )
+  data <- fetch_github_release_asset(dataset_name, quiet = quiet)
 
   if (!is.null(data) && is.data.frame(data) && nrow(data) > 0) {
     return(data)

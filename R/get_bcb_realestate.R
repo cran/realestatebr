@@ -6,80 +6,55 @@
 #'
 #' @param table Character. One of `'accounting'`, `'application'`, `'indices'`,
 #'   `'sources'`, `'units'`, or `'all'` (default).
-#' @param cached Logical. If `TRUE`, attempts to load data from cache.
 #' @param quiet Logical. If `TRUE`, suppresses progress messages.
 #' @param max_retries Integer. Maximum retry attempts. Defaults to 3.
 #'
 #' @return Tibble with BCB real estate data. Includes metadata attributes:
 #'   source, download_time.
 #'
-#' @source \url{https://dadosabertos.bcb.gov.br/dataset/informacoes-do-mercado-imobiliario}
+#' @source Brazilian Central Bank (BCB) Open Data Portal
 #' @keywords internal
 get_bcb_realestate <- function(
   table = "all",
-  cached = FALSE,
   quiet = FALSE,
   max_retries = 3L
 ) {
-  # Input validation ----
   valid_tables <- c("accounting", "application", "indices", "sources", "units")
 
   validate_dataset_params(
     table,
     valid_tables,
-    cached,
     quiet,
     max_retries,
     allow_all = TRUE
   )
 
-  # Resolve data: cache or fresh download ----
-  clean_bcb <- NULL
+  cli_user("Downloading real estate data from BCB API", quiet = quiet)
 
-  if (cached) {
-    cached_data <- handle_dataset_cache(
-      "bcb_realestate",
-      table = NULL,
-      quiet = quiet,
-      on_miss = "download"
-    )
-    if (!is.null(cached_data)) {
-      clean_bcb <- attach_dataset_metadata(
-        cached_data,
-        source = "cache",
-        category = table
-      )
+  bcb <- rlang::try_fetch(
+    download_bcb_realestate(quiet = quiet, max_retries = max_retries),
+    error = function(cnd) {
+      if (!quiet) {
+        cli::cli_warn("BCB API download failed: {cnd$message}")
+      }
+      NULL
     }
-  }
+  )
 
-  if (is.null(clean_bcb)) {
-    cli_user("Downloading real estate data from BCB API", quiet = quiet)
-
-    bcb <- rlang::try_fetch(
-      download_bcb_realestate(quiet = quiet, max_retries = max_retries),
-      error = function(cnd) {
-        if (!quiet) {
-          cli::cli_warn("BCB API download failed: {cnd$message}")
-        }
-        NULL
-      }
-    )
-
-    if (is.null(bcb)) {
-      data <- fallback_to_github_cache("bcb_realestate", quiet = quiet)
-      if (!is.null(data)) {
-        clean_bcb <- attach_dataset_metadata(data, source = "github_cache")
-      } else {
-        cli::cli_abort(c(
-          "BCB API failed after {max_retries} attempts",
-          "x" = "GitHub cache is also unavailable",
-          "i" = "The BCB API may be temporarily down"
-        ))
-      }
+  if (is.null(bcb)) {
+    data <- fallback_to_github_cache("bcb_realestate", quiet = quiet)
+    if (!is.null(data)) {
+      clean_bcb <- attach_dataset_metadata(data, source = "github")
     } else {
-      clean_bcb <- clean_bcb_realestate(bcb)
-      clean_bcb <- attach_dataset_metadata(clean_bcb, source = "web")
+      cli::cli_abort(c(
+        "BCB API failed after {max_retries} attempts",
+        "x" = "GitHub release is also unavailable",
+        "i" = "The BCB API may be temporarily down"
+      ))
     }
+  } else {
+    clean_bcb <- clean_bcb_realestate(bcb)
+    clean_bcb <- attach_dataset_metadata(clean_bcb, source = "web")
   }
 
   # Return full cleaned table ----

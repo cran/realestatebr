@@ -2,35 +2,24 @@
 
 #' Generic Parameter Validation for Dataset Functions
 #'
-#' Validates common parameters used across all dataset functions. This
-#' consolidates repetitive validation logic into a single reusable function.
+#' Validates common parameters used across all dataset functions.
 #'
 #' @param table Character. The table parameter to validate.
 #' @param valid_tables Character vector. Valid table names for the dataset.
-#' @param cached Logical. Whether to use cached data.
 #' @param quiet Logical. Whether to suppress messages.
 #' @param max_retries Numeric. Maximum number of retry attempts.
 #' @param allow_all Logical. Whether "all" is a valid table value. Default TRUE.
 #'
 #' @return Invisible TRUE if all validations pass. Errors otherwise.
 #'
-#' @details
-#' This function performs standard validation for:
-#' - table: Must be character, length 1, in valid_tables (or "all" if allowed)
-#' - cached: Must be logical, length 1
-#' - quiet: Must be logical, length 1
-#' - max_retries: Must be numeric, length 1, positive
-#'
 #' @keywords internal
 validate_dataset_params <- function(
   table,
   valid_tables,
-  cached,
   quiet,
   max_retries,
   allow_all = TRUE
 ) {
-  # Validate table parameter
   if (!is.character(table) || length(table) != 1) {
     cli::cli_abort(c(
       "Invalid {.arg table} parameter",
@@ -38,7 +27,6 @@ validate_dataset_params <- function(
     ))
   }
 
-  # Check if table is in valid tables (or "all" if allowed)
   valid_values <- if (allow_all) c(valid_tables, "all") else valid_tables
 
   if (!table %in% valid_values) {
@@ -48,124 +36,15 @@ validate_dataset_params <- function(
     ))
   }
 
-  # Validate cached parameter
-  if (!is.logical(cached) || length(cached) != 1) {
-    cli::cli_abort("{.arg cached} must be a logical value")
-  }
-
-  # Validate quiet parameter
   if (!is.logical(quiet) || length(quiet) != 1) {
     cli::cli_abort("{.arg quiet} must be a logical value")
   }
 
-  # Validate max_retries parameter
   if (!is.numeric(max_retries) || length(max_retries) != 1 || max_retries < 1) {
     cli::cli_abort("{.arg max_retries} must be a positive integer")
   }
 
   invisible(TRUE)
-}
-
-# Cache handling -------------------------------------------------------------
-
-#' Generic Cache Handler with Fallback
-#'
-#' Attempts to load data from user cache with configurable fallback behavior.
-#' Consolidates cache loading logic used across all dataset functions.
-#'
-#' @param dataset_name Character. Name of the dataset (e.g., "abecip").
-#' @param table Character or NULL. Specific table to extract from cached data.
-#'   If NULL, returns entire cached dataset.
-#' @param quiet Logical. Whether to suppress informational messages.
-#' @param on_miss Character. What to do on cache miss:
-#'   - "return_null": Return NULL silently
-#'   - "error": Throw an error
-#'   - "download": Return NULL to trigger download (default)
-#'
-#' @return The cached data (tibble or list), or NULL on cache miss.
-#'
-#' @details
-#' The function attempts to load data from the user cache directory
-#' (`~/.local/share/realestatebr/` or equivalent). If a table parameter is
-#' provided, it extracts that specific table from the cached dataset.
-#'
-#' On cache miss, behavior is controlled by `on_miss`:
-#' - "return_null": Quietly returns NULL (caller handles fallback)
-#' - "error": Throws error (use when cache is required)
-#' - "download": Returns NULL with warning (triggers download in caller)
-#'
-#' @keywords internal
-handle_dataset_cache <- function(
-  dataset_name,
-  table = NULL,
-  quiet = FALSE,
-  on_miss = c("download", "return_null", "error")
-) {
-  on_miss <- match.arg(on_miss)
-
-  if (!quiet) {
-    cli::cli_inform("Loading {dataset_name} data from cache...")
-  }
-
-  rlang::try_fetch(
-    {
-      # Attempt to load from user cache
-      cached_data <- load_from_user_cache(dataset_name, quiet = quiet)
-
-      # Handle cache miss
-      if (is.null(cached_data)) {
-        if (!quiet) {
-          if (on_miss == "download") {
-            cli::cli_warn(
-              "Data not found in user cache, falling back to fresh download"
-            )
-          } else if (on_miss == "return_null") {
-            cli::cli_inform("Data not found in user cache")
-          }
-        }
-
-        if (on_miss == "error") {
-          cli::cli_abort("Cache miss for {dataset_name}")
-        }
-
-        return(NULL)
-      }
-
-      # Extract specific table if requested
-      if (!is.null(table) && table != "all") {
-        if (table %in% names(cached_data)) {
-          data <- cached_data[[table]]
-        } else {
-          available <- paste(names(cached_data), collapse = ", ")
-          cli::cli_abort(
-            "Table '{table}' not found in cached data. Available: {available}"
-          )
-        }
-      } else {
-        data <- cached_data
-      }
-
-      if (!quiet) {
-        cli::cli_inform("Successfully loaded data from cache")
-      }
-
-      return(data)
-    },
-    error = function(cnd) {
-      if (!quiet) {
-        cli::cli_warn(c(
-          "Failed to load cached data: {cnd$message}",
-          "i" = "Falling back to fresh download"
-        ))
-      }
-
-      if (on_miss == "error") {
-        rlang::abort("Cache miss for {dataset_name}", parent = cnd)
-      }
-
-      return(NULL)
-    }
-  )
 }
 
 # Metadata attachment --------------------------------------------------------
@@ -176,7 +55,9 @@ handle_dataset_cache <- function(
 #' metadata attachment logic used across all dataset functions.
 #'
 #' @param data Data frame or tibble. The dataset to attach metadata to.
-#' @param source Character. Data source: "web", "cache", or "github".
+#' @param source Character. Data source: `"web"` (fresh from the original
+#'   source), `"github"` (the package's GitHub release), or `"bundled"`
+#'   (static file shipped with the package in `inst/extdata`).
 #' @param category Character or NULL. Dataset category/table name.
 #' @param extra_info List. Additional metadata to include in download_info.
 #'
@@ -185,7 +66,7 @@ handle_dataset_cache <- function(
 #' @keywords internal
 attach_dataset_metadata <- function(
   data,
-  source = c("web", "cache", "github", "github_cache"),
+  source = c("web", "github", "bundled"),
   category = NULL,
   extra_info = list()
 ) {

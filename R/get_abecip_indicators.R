@@ -5,8 +5,6 @@
 #' units, and home-equity loan data.
 #'
 #' @param table Character. One of `'sbpe'` (default), `'units'`, or `'cgi'`.
-#' @param cached Logical. If `TRUE`, attempts to load data from package cache
-#'   using the unified dataset architecture.
 #' @param quiet Logical. If `TRUE`, suppresses progress messages and warnings.
 #'   If `FALSE` (default), provides detailed progress reporting.
 #' @param max_retries Integer. Maximum number of retry attempts for failed
@@ -16,11 +14,11 @@
 #'   (for specific tables). The return includes metadata attributes:
 #'   \describe{
 #'     \item{download_info}{List with download statistics}
-#'     \item{source}{Data source used (web or cache)}
+#'     \item{source}{Data source used}
 #'     \item{download_time}{Timestamp of download}
 #'   }
 #'
-#' @source [https://www.abecip.org.br](https://www.abecip.org.br)
+#' @source Brazilian Association of Real Estate Credit and Savings (ABECIP)
 #' @importFrom cli cli_inform cli_warn cli_abort
 #' @importFrom dplyr filter select mutate rename rename_with bind_rows
 #' @importFrom tidyr pivot_longer pivot_wider
@@ -30,37 +28,18 @@
 #' @keywords internal
 get_abecip_indicators <- function(
   table = "sbpe",
-  cached = FALSE,
   quiet = FALSE,
   max_retries = 3L
 ) {
-  # Input validation ----
   valid_tables <- c("sbpe", "cgi", "units")
   validate_dataset_params(
     table,
     valid_tables,
-    cached,
     quiet,
     max_retries,
     allow_all = FALSE
   )
 
-  # Handle cached data ----
-  if (cached) {
-    data <- handle_dataset_cache(
-      "abecip",
-      table = table,
-      quiet = quiet,
-      on_miss = "download"
-    )
-
-    if (!is.null(data)) {
-      data <- attach_dataset_metadata(data, source = "cache", category = table)
-      return(data)
-    }
-  }
-
-  # Download fresh data ----
   if (!quiet) {
     cli::cli_inform("Downloading data from Abecip...")
   }
@@ -106,7 +85,7 @@ get_abecip_indicators <- function(
   if (table == "cgi") {
     abecip <- attach_dataset_metadata(
       abecip,
-      source = "cache",
+      source = "bundled",
       category = table,
       extra_info = list(note = "CGI is a static historical dataset")
     )

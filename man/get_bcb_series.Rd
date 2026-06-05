@@ -4,12 +4,11 @@
 \alias{get_bcb_series}
 \title{Download macroeconomic time-series from BCB}
 \source{
-\url{https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries}
+Brazilian Central Bank (BCB) Time Series Management System (SGS)
 }
 \usage{
 get_bcb_series(
   table = "core",
-  cached = FALSE,
   date_start = as.Date("2010-01-01"),
   quiet = FALSE,
   max_retries = 3L,
@@ -25,8 +24,6 @@ get_bcb_series(
 \item{"tertiary"}{All series including less relevant and discontinued ones (~141 series).}
 \item{"full"}{Equivalent to "tertiary". Returns all available series.}
 }}
-
-\item{cached}{Logical. If \code{TRUE}, attempts to load data from package cache.}
 
 \item{date_start}{A \code{Date} indicating the first period to extract.
 Defaults to 2010-01-01.}

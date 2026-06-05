@@ -6,22 +6,19 @@
 #'
 #' @param table Character. Dataset table: "selected", "detailed_monthly",
 #'   "detailed_quarterly", "detailed_annual", or "detailed_halfyearly".
-#' @param cached Logical. If `TRUE`, loads data from cache.
 #' @param quiet Logical. If `TRUE`, suppresses progress messages.
 #' @param max_retries Integer. Maximum retry attempts. Defaults to 3.
 #'
 #' @return Tibble with BIS RPPI data. Includes metadata attributes:
 #'   source, download_time.
 #'
-#' @source \url{https://data.bis.org/topics/RPP}
+#' @source Bank for International Settlements (BIS) Residential Property Prices
 #' @keywords internal
 get_rppi_bis <- function(
   table = "selected",
-  cached = FALSE,
   quiet = FALSE,
   max_retries = 3L
 ) {
-  # Input validation ----
   valid_tables <- c(
     "selected",
     "detailed_monthly",
@@ -33,28 +30,11 @@ get_rppi_bis <- function(
   validate_dataset_params(
     table,
     valid_tables,
-    cached,
     quiet,
     max_retries,
     allow_all = FALSE
   )
 
-  # Handle cached data ----
-  if (cached) {
-    data <- handle_dataset_cache(
-      "rppi_bis",
-      table = table,
-      quiet = quiet,
-      on_miss = "download"
-    )
-
-    if (!is.null(data)) {
-      data <- attach_dataset_metadata(data, source = "cache", category = table)
-      return(data)
-    }
-  }
-
-  # Download and process data ----
   cli_user("Downloading BIS RPPI data for table '{table}'", quiet = quiet)
 
   if (table == "selected") {

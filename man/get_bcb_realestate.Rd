@@ -4,21 +4,14 @@
 \alias{get_bcb_realestate}
 \title{Import Real Estate data from the Brazilian Central Bank}
 \source{
-\url{https://dadosabertos.bcb.gov.br/dataset/informacoes-do-mercado-imobiliario}
+Brazilian Central Bank (BCB) Open Data Portal
 }
 \usage{
-get_bcb_realestate(
-  table = "all",
-  cached = FALSE,
-  quiet = FALSE,
-  max_retries = 3L
-)
+get_bcb_realestate(table = "all", quiet = FALSE, max_retries = 3L)
 }
 \arguments{
 \item{table}{Character. One of \code{'accounting'}, \code{'application'}, \code{'indices'},
 \code{'sources'}, \code{'units'}, or \code{'all'} (default).}
-
-\item{cached}{Logical. If \code{TRUE}, attempts to load data from cache.}
 
 \item{quiet}{Logical. If \code{TRUE}, suppresses progress messages.}
 

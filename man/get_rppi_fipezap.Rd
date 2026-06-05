@@ -4,12 +4,10 @@
 \alias{get_rppi_fipezap}
 \title{Get FipeZap RPPI}
 \usage{
-get_rppi_fipezap(city = "all", cached = FALSE, quiet = FALSE, max_retries = 3L)
+get_rppi_fipezap(city = "all", quiet = FALSE, max_retries = 3L)
 }
 \arguments{
 \item{city}{City name or "all" (default). Filtering by city doesn't save processing time.}
-
-\item{cached}{Logical. If TRUE, loads from GitHub cache}
 
 \item{quiet}{Logical. If TRUE, suppresses warnings}
 

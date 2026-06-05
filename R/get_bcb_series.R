@@ -15,7 +15,6 @@
 #'     \item{"tertiary"}{All series including less relevant and discontinued ones (~141 series).}
 #'     \item{"full"}{Equivalent to "tertiary". Returns all available series.}
 #'   }
-#' @param cached Logical. If `TRUE`, attempts to load data from package cache.
 #' @param date_start A `Date` indicating the first period to extract.
 #'   Defaults to 2010-01-01.
 #' @param quiet Logical. If `TRUE`, suppresses progress messages.
@@ -23,7 +22,7 @@
 #'   Defaults to 3.
 #' @param ... Additional arguments passed to `rbcb::get_series`.
 #'
-#' @source [https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries](https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries)
+#' @source Brazilian Central Bank (BCB) Time Series Management System (SGS)
 #' @return A 4-column `tibble` with columns `date`, `code_bcb`,
 #'   `name_simplified`, and `value`. Series metadata is available in
 #'   \code{\link{bcb_metadata}}.
@@ -35,7 +34,6 @@
 #' @keywords internal
 get_bcb_series <- function(
   table = "core",
-  cached = FALSE,
   date_start = as.Date("2010-01-01"),
   quiet = FALSE,
   max_retries = 3L,
@@ -53,7 +51,6 @@ get_bcb_series <- function(
   validate_dataset_params(
     table,
     hierarchy_levels,
-    cached,
     quiet,
     max_retries,
     allow_all = TRUE
@@ -81,33 +78,6 @@ get_bcb_series <- function(
     cli::cli_inform(
       "Selected {length(codes_bcb)} BCB series (table: {.val {table}})"
     )
-  }
-
-  if (cached) {
-    data <- handle_dataset_cache(
-      "bcb_series",
-      table = NULL,
-      quiet = quiet,
-      on_miss = "download"
-    )
-
-    if (!is.null(data)) {
-      data <- dplyr::filter(
-        data,
-        .data$code_bcb %in% codes_bcb,
-        .data$date >= date_start
-      )
-      data <- attach_dataset_metadata(
-        data,
-        source = "cache",
-        category = table,
-        extra_info = list(
-          series_count = length(codes_bcb),
-          date_start = date_start
-        )
-      )
-      return(data)
-    }
   }
 
   if (!quiet) {

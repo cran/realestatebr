@@ -1,3 +1,52 @@
+# realestatebr 1.0.1
+
+CRAN resubmission. Version 1.0.0 was archived on 2026-05-28 because the
+package and its transitive `piggyback`/`gh` dependencies wrote to
+`~/.cache/realestatebr/` and `~/.cache/R/gh/`, violating CRAN's policy on
+home-filespace writes. This release removes this: the caching
+architecture is fully overhauled.
+
+## Caching architecture
+
+The user-level disk cache has been removed. The package no longer writes
+to `~/.cache/realestatebr/` (or any other location outside the R session's
+temporary directory).
+
+* `get_dataset()` is now two-tier: it tries the package's GitHub release
+  asset first and falls back to a fresh download from the original source.
+  The `source` argument no longer accepts `"cache"`; valid values are
+  `"auto"`, `"github"`, and `"fresh"`. The `max_age` argument has been
+  removed (cache freshness is now managed by the weekly CI/CD release
+  pipeline).
+* Repeated `get_dataset()` calls within one R session are served from a
+  package-private in-memory environment. Use the new
+  `clear_session_cache()` function to drop it.
+* The exported helpers `clear_user_cache()`, `check_cache_status()`, and
+  `update_cache_from_github()` have been removed.
+* Internal dataset functions (`get_abecip_indicators()`, `get_secovi()`,
+  `get_rppi_*()`, etc.) no longer accept a `cached` argument. They always
+  download from the original source; use `get_dataset(source = "github")`
+  for the pre-processed asset.
+* `piggyback` (formerly Suggests) and `rappdirs` (formerly Imports) have
+  been dropped. GitHub release assets are now fetched directly via
+  `httr::GET()` against the public release-asset URL, avoiding the
+  transitive `gh::gh()` cache writes that also violated CRAN policy.
+
+## Bug fixes
+
+* `attach_dataset_metadata()` now accepts `"bundled"` as a valid `source`
+  value, fixing a hard error when `get_dataset("abecip", "cgi")` was
+  called with `source = "fresh"`. The CGI table loads from a bundled
+  `inst/extdata` file and was previously tagged with the rejected value
+  `"cache"`.
+
+## Internal
+
+* Removed the unused `data-raw/publish-cache.R` script, which still
+  imported the dropped `piggyback` dependency. The weekly workflow has
+  uploaded `data-raw/cache_output/` via `gh release upload` since the
+  caching refactor.
+
 # realestatebr 1.0.0
 
 ## Breaking changes
@@ -55,9 +104,9 @@
 * Replaced bare `tryCatch` with `rlang::try_fetch` throughout, using
   `parent = cnd` to preserve the original error chain.
 * All dataset functions now call `validate_dataset_params()`,
-  `handle_dataset_cache()`, `attach_dataset_metadata()`, and
-  `validate_dataset()` from `R/helpers-dataset.R` and
-  `R/helpers-download.R` instead of re-implementing these patterns inline.
+  `attach_dataset_metadata()`, and `validate_dataset()` from
+  `R/helpers_dataset.R` and `R/helpers_download.R` instead of
+  re-implementing these patterns inline.
 
 ## CI / pipeline
 

@@ -88,7 +88,6 @@ standardize_rppi_structure <- function(dat) {
 #' Use get_dataset("rppi", table) for individual indices (IQA, IQAIW, Secovi-SP, etc.).
 #'
 #' @param table Character. "sale", "rent", or "all"
-#' @param cached Logical. If TRUE, loads from GitHub cache
 #' @param quiet Logical. If TRUE, suppresses messages
 #' @param max_retries Integer. Maximum retry attempts
 #'
@@ -98,7 +97,6 @@ standardize_rppi_structure <- function(dat) {
 #' @keywords internal
 get_rppi <- function(
   table = "sale",
-  cached = FALSE,
   quiet = FALSE,
   max_retries = 3L
 ) {
@@ -116,13 +114,11 @@ get_rppi <- function(
   validate_dataset_params(
     table = table,
     valid_tables = valid_tables,
-    cached = cached,
     quiet = quiet,
     max_retries = max_retries,
     allow_all = TRUE
   )
 
-  # Route individual tables to their respective functions
   rppi_fns <- list(
     fipezap = get_rppi_fipezap,
     ivgr = get_rppi_ivgr,
@@ -135,21 +131,15 @@ get_rppi <- function(
 
   if (table %in% names(rppi_fns)) {
     return(rppi_fns[[table]](
-      cached = cached,
       quiet = quiet,
       max_retries = max_retries
     ))
   }
 
-  # Stack sale indices
   if (table == "sale") {
-    igmi <- get_rppi_igmi(cached, quiet, max_retries)
-    ivgr <- get_rppi_ivgr(cached, quiet, max_retries)
-    fipezap <- get_rppi_fipezap(
-      cached = cached,
-      quiet = quiet,
-      max_retries = max_retries
-    )
+    igmi <- get_rppi_igmi(quiet, max_retries)
+    ivgr <- get_rppi_ivgr(quiet, max_retries)
+    fipezap <- get_rppi_fipezap(quiet = quiet, max_retries = max_retries)
 
     series <- list(
       "IGMI-R" = standardize_rppi_structure(igmi),
@@ -157,14 +147,9 @@ get_rppi <- function(
       "FipeZap" = harmonize_fipezap_for_stacking(fipezap, "sale")
     )
   } else if (table == "rent") {
-    # Stack rent indices
-    ivar <- get_rppi_ivar(cached, quiet, max_retries)
-    iqaiw <- get_rppi_iqaiw(cached, quiet, max_retries)
-    fipezap <- get_rppi_fipezap(
-      cached = cached,
-      quiet = quiet,
-      max_retries = max_retries
-    )
+    ivar <- get_rppi_ivar(quiet, max_retries)
+    iqaiw <- get_rppi_iqaiw(quiet, max_retries)
+    fipezap <- get_rppi_fipezap(quiet = quiet, max_retries = max_retries)
 
     series <- list(
       "IQAIW" = standardize_rppi_structure(dplyr::filter(
@@ -175,11 +160,9 @@ get_rppi <- function(
       "FipeZap" = harmonize_fipezap_for_stacking(fipezap, "rent")
     )
   } else {
-    # Stack all: each sub-call already has a 'source' column; add
-    # 'transaction_type' ("sale"/"rent") as the outer grouping key.
     series <- list(
-      "sale" = get_rppi("sale", cached, quiet, max_retries),
-      "rent" = get_rppi("rent", cached, quiet, max_retries)
+      "sale" = get_rppi("sale", quiet, max_retries),
+      "rent" = get_rppi("rent", quiet, max_retries)
     )
     stacked_data <- dplyr::bind_rows(series, .id = "transaction_type")
 
@@ -213,7 +196,6 @@ get_rppi <- function(
 #' Note: Median indices suffer from composition bias and cannot account for quality
 #' changes across the housing stock.
 #'
-#' @param cached Logical. If TRUE, loads from GitHub cache
 #' @param quiet Logical. If TRUE, suppresses warnings
 #' @param max_retries Integer. Maximum retry attempts for downloads
 #'
@@ -223,14 +205,7 @@ get_rppi <- function(
 #' Imoveis Residenciais Financiados (IVG-R). Seminario de Metodologia do IBGE."
 #'
 #' @keywords internal
-get_rppi_ivgr <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
-  # Try cached first
-  if (cached) {
-    data <- try_rppi_cached("sale", "IVG-R")
-    if (!is.null(data)) return(data)
-  }
-
-  # Download fresh from BCB
+get_rppi_ivgr <- function(quiet = FALSE, max_retries = 3L) {
   ivgr <- download_with_retry(
     function() {
       rbcb::get_series(21340, start_date = as.Date("2001-03-01")) |>
@@ -258,21 +233,13 @@ get_rppi_ivgr <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
 #' account for both composition bias and quality differentials across the housing stock.
 #' Maintained by ABECIP in partnership with FGV.
 #'
-#' @param cached Logical. If TRUE, loads from GitHub cache
 #' @param quiet Logical. If TRUE, suppresses warnings
 #' @param max_retries Integer. Maximum retry attempts for downloads
 #'
 #' @return Tibble with columns: date, name_muni, index, chg, acum12m
 #'
 #' @keywords internal
-get_rppi_igmi <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
-  # Try cached first
-  if (cached) {
-    data <- try_rppi_cached("sale", "IGMI-R")
-    if (!is.null(data)) return(data)
-  }
-
-  # Scrape download URL and download Excel with retry
+get_rppi_igmi <- function(quiet = FALSE, max_retries = 3L) {
   temp_path <- download_with_retry(
     function() {
       base_url <- "https://www.abecip.org.br/igmi-r-abecip/serie-historica"
@@ -378,21 +345,13 @@ get_rppi_igmi <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
 #' apartments, studios, and flats. Note: IQA provides raw prices (not index numbers),
 #' so `rent_price` is the median rent per square meter.
 #'
-#' @param cached Logical. If TRUE, loads from GitHub cache
 #' @param quiet Logical. If TRUE, suppresses warnings
 #' @param max_retries Integer. Maximum retry attempts for downloads
 #'
 #' @return Tibble with columns: date, name_muni, rent_price, chg, acum12m
 #'
 #' @keywords internal
-get_rppi_iqa <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
-  # Try cached first
-  if (cached) {
-    data <- try_rppi_user_cache("rppi_iqa", quiet = quiet)
-    if (!is.null(data)) return(data)
-  }
-
-  # Download CSV with retry
+get_rppi_iqa <- function(quiet = FALSE, max_retries = 3L) {
   url <- "https://publicfiles.data.quintoandar.com.br/Indice_QuintoAndar.csv"
   iqa <- download_with_retry(
     function() readr::read_csv(url, col_types = "cDn", show_col_types = FALSE),
@@ -432,43 +391,32 @@ get_rppi_iqa <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
 #' national index is a weighted average. More theoretically sound than IGP-M for rent
 #' contracts as it measures only rent prices.
 #'
-#' @note IVAR data is only available from cache as the source data (FGV) is not
-#' accessible via web scraping. This function will automatically use cached data
-#' when source data is unavailable.
+#' @note IVAR's underlying source (FGV) is not accessible via web scraping;
+#' when the static `fgv_data` object is unavailable, this function falls back
+#' to the package's GitHub release.
 #'
-#' @param cached Logical. If TRUE, loads from GitHub cache (recommended)
 #' @param quiet Logical. If TRUE, suppresses warnings
 #' @param max_retries Integer. Maximum retry attempts (not used for this data source)
 #'
 #' @return Tibble with columns: date, name_muni, index, chg, acum12m, name_simplified, abbrev_state
 #'
 #' @keywords internal
-get_rppi_ivar <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
-  # Try cached first
-  if (cached) {
-    data <- try_rppi_cached("rent", "IVAR")
-    if (!is.null(data)) return(data)
-  }
-
+get_rppi_ivar <- function(quiet = FALSE, max_retries = 3L) {
   if (!exists("fgv_data") || !exists("dim_city")) {
     if (!quiet) {
       cli::cli_inform(c(
-        "i" = "IVAR source data not available, loading from cache..."
+        "i" = "IVAR source data not available, loading from GitHub release..."
       ))
     }
 
-    data <- try_rppi_user_cache("rppi_ivar", quiet = quiet)
-
-    if (is.null(data)) {
-      data <- fallback_to_github_cache("rppi_ivar", quiet = quiet)
-    }
+    data <- fallback_to_github_cache("rppi_ivar", quiet = quiet)
 
     if (is.null(data)) {
       cli::cli_abort(c(
         "IVAR data not available",
-        "x" = "Source data (fgv_data) is not accessible and cache is unavailable",
+        "x" = "Source data (fgv_data) is not accessible and GitHub release is unavailable",
         "i" = "IVAR requires static FGV data that is not web-scrapable",
-        "i" = "Please use cached data: get_dataset('rppi', 'ivar', source = 'github')"
+        "i" = "Please retry: get_dataset('rppi', 'ivar', source = 'github')"
       ))
     }
 
@@ -511,27 +459,15 @@ get_rppi_ivar <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
 #' Secovi-SP rent price index for Sao Paulo. Wrapper around get_secovi() that
 #' extracts and formats rent price data as RPPI.
 #'
-#' @param cached Logical. If TRUE, loads from GitHub cache
 #' @param quiet Logical. If TRUE, suppresses warnings
 #' @param max_retries Integer. Maximum retry attempts
 #'
 #' @return Tibble with columns: date, name_muni, index, chg, acum12m
 #'
 #' @keywords internal
-get_rppi_secovi_sp <- function(
-  cached = FALSE,
-  quiet = FALSE,
-  max_retries = 3L
-) {
-  # Try cached first
-  if (cached) {
-    data <- try_rppi_user_cache("rppi_secovi_sp", quiet = quiet)
-    if (!is.null(data)) return(data)
-  }
-
+get_rppi_secovi_sp <- function(quiet = FALSE, max_retries = 3L) {
   dat <- get_secovi(
     table = "rent",
-    cached = FALSE,
     quiet = quiet,
     max_retries = max_retries
   )
@@ -557,7 +493,6 @@ get_rppi_secovi_sp <- function(
 #' and flats. National index: `name_muni == 'Brazil'` (after standardization).
 #'
 #' @param city City name or "all" (default). Filtering by city doesn't save processing time.
-#' @param cached Logical. If TRUE, loads from GitHub cache
 #' @param quiet Logical. If TRUE, suppresses warnings
 #' @param max_retries Integer. Maximum retry attempts
 #'
@@ -566,26 +501,9 @@ get_rppi_secovi_sp <- function(
 #' @keywords internal
 get_rppi_fipezap <- function(
   city = "all",
-  cached = FALSE,
   quiet = FALSE,
   max_retries = 3L
 ) {
-  if (cached) {
-    data <- rlang::try_fetch(
-      {
-        df <- get_dataset("rppi", "fipezap", source = "github")
-        if (city != "all" && city %in% unique(df$name_muni)) {
-          df <- dplyr::filter(df, name_muni == city)
-        }
-        df
-      },
-      error = function(cnd) NULL
-    )
-
-    if (!is.null(data)) return(data)
-  }
-
-  # Download Excel with retry
   url <- "https://downloads.fipe.org.br/indices/fipezap/fipezap-serieshistoricas.xlsx"
   temp_path <- download_excel(
     url,
@@ -744,21 +662,13 @@ build_fipezap_col_names <- function() {
 #' been improved simply by adopting a hedonic methodology, without the need to
 #' mix data sources.
 #'
-#' @param cached Logical. If TRUE, loads from GitHub cache
 #' @param quiet Logical. If TRUE, suppresses warnings
 #' @param max_retries Integer. Maximum retry attempts for downloads
 #'
 #' @return Tibble with columns: date, name_muni, index, chg, acum12m, price_m2
 #'
 #' @keywords internal
-get_rppi_iqaiw <- function(cached = FALSE, quiet = FALSE, max_retries = 3L) {
-  # Try cached first
-  if (cached) {
-    data <- try_rppi_user_cache("rppi_iqaiw", quiet = quiet)
-    if (!is.null(data)) return(data)
-  }
-
-  # Download CSV with retry
+get_rppi_iqaiw <- function(quiet = FALSE, max_retries = 3L) {
   url <- "https://publicfiles.data.quintoandar.com.br/indice_quintoandar_imovelweb/index_quintoandar_imovelweb_serie.csv"
 
   dat <- download_with_retry(
